@@ -128,7 +128,7 @@ function initialize()
 
 	
 	//markerRoot1.add( mesh1 );
-
+/*
 // Load atlas texture
 const atlasTexture = new THREE.TextureLoader().load('comp1.png'); // 4x4 texture grid
 const atlasSize = new THREE.Vector2(4, 4);
@@ -211,9 +211,32 @@ geometry.setAttribute('uvOffset', new THREE.InstancedBufferAttribute(uvOffsets, 
 instancedMesh.rotation.x = - Math.PI/2;
 markerRoot1.add(instancedMesh);
 
+*/
 
+const video = document.createElement('video');
+video.src = 'video.mp4';    // your video file
+video.crossOrigin = 'anonymous';
+video.loop = true;
+video.muted = true;         // required for autoplay on most browsers
+video.playsInline = true;   // for iOS
+video.autoplay = true;
+video.play();
 
+// Create a texture from the video
+const videoTexture = new THREE.VideoTexture(video);
+videoTexture.minFilter = THREE.LinearFilter;
+videoTexture.magFilter = THREE.LinearFilter;
+videoTexture.format = THREE.RGBAFormat;
 
+// Apply it to a material
+const material = new THREE.MeshBasicMaterial({ map: videoTexture });
+
+// Use it on a mesh
+const geometry = new THREE.PlaneGeometry(478/478 * 1.2, 850/478 * 1.2);
+const mesh = new THREE.Mesh(geometry, material);
+mesh.rotation.x = - Math.PI/2;
+mesh.rotation.z = - Math.PI/2;
+markerRoot1.add(mesh);
 
 }
 
