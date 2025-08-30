@@ -228,8 +228,47 @@ videoTexture.minFilter = THREE.LinearFilter;
 videoTexture.magFilter = THREE.LinearFilter;
 videoTexture.format = THREE.RGBAFormat;
 
+/////////////////////////////////////////////////////
+
+const video2 = document.createElement('video');
+video2.src = 'video2.mov';    // your video file
+video2.crossOrigin = 'anonymous';
+video2.loop = true;
+video2.muted = true;         // required for autoplay on most browsers
+video2.playsInline = true;   // for iOS
+video2.autoplay = true;
+video2.play();
+
+// Create a texture from the video
+const videoTexture2 = new THREE.VideoTexture(video2);
+videoTexture2.minFilter = THREE.LinearFilter;
+videoTexture2.magFilter = THREE.LinearFilter;
+videoTexture2.format = THREE.RGBAFormat;
+
+/////////////////////////////////////////////////////
+
+
+const video3 = document.createElement('video');
+video3.src = 'video3.mov';    // your video file
+video3.crossOrigin = 'anonymous';
+video3.loop = true;
+video3.muted = true;         // required for autoplay on most browsers
+video3.playsInline = true;   // for iOS
+video3.autoplay = true;
+video3.play();
+
+// Create a texture from the video
+const videoTexture3 = new THREE.VideoTexture(video3);
+videoTexture3.minFilter = THREE.LinearFilter;
+videoTexture3.magFilter = THREE.LinearFilter;
+videoTexture3.format = THREE.RGBAFormat;
+
+/////////////////////////////////////////////////////
+
 // Apply it to a material
 const material = new THREE.MeshBasicMaterial({ map: videoTexture });
+const material2 = new THREE.MeshBasicMaterial({ map: videoTexture2 });
+const material3 = new THREE.MeshBasicMaterial({ map: videoTexture3 });
 
 // Use it on a mesh
 const geometry = new THREE.PlaneGeometry(478/478 * 1.2, 850/478 * 1.2);
@@ -237,6 +276,22 @@ const mesh = new THREE.Mesh(geometry, material);
 mesh.rotation.x = - Math.PI/2;
 mesh.rotation.z = - Math.PI/2;
 markerRoot1.add(mesh);
+
+// Use it on a mesh
+const geometry2 = new THREE.PlaneGeometry(480/640 * 1.2,480/480 * 1.2);
+const mesh2 = new THREE.Mesh(geometry, material3);
+mesh2.rotation.x = - Math.PI/2;
+mesh2.rotation.x = - Math.PI/2;
+mesh2.rotation.z = - Math.PI/2;
+mesh2.position.z = 1.5;
+markerRoot1.add(mesh2);
+
+const mesh3 = new THREE.Mesh(geometry, material2);
+mesh3.rotation.x = - Math.PI/2;
+mesh3.rotation.x = - Math.PI/2;
+mesh3.rotation.z = - Math.PI/2;
+mesh3.position.z = - 1.5;
+markerRoot1.add(mesh3);
 
 }
 
