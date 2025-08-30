@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<head>
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<title>Hello, AR Cube!</title>
+	<!-- include three.js library -->
+	<script src='https://cdnjs.cloudflare.com/ajax/libs/three.js/110/three.js'></script>
+	<!-- include jsartookit -->
+	<script src="jsartoolkit5/artoolkit.min.js"></script>
+	<script src="jsartoolkit5/artoolkit.api.js"></script>
+	<!-- include threex.artoolkit -->
+	<script src="threex/threex-artoolkitsource.js"></script>
+	<script src="threex/threex-artoolkitcontext.js"></script>
+	<script src="threex/threex-arbasecontrols.js"></script>
+	<script src="threex/threex-armarkercontrols.js"></script>
+</head>
+
+<body style='margin : 0px; overflow: hidden; font-family: Monospace;'>
+
+<!-- 
+  Example created by Lee Stemkoski: https://github.com/stemkoski
+  Based on the AR.js library and examples created by Jerome Etienne: https://github.com/jeromeetienne/AR.js/
+-->
+
+<script>
+
+var scene, camera, renderer, clock, deltaTime, totalTime;
+
+var arToolkitSource, arToolkitContext;
+
+var markerRoot1, markerRoot2;
+
+var mesh1;
+
+initialize();
+animate();
+
+function initialize()
+{
+	scene = new THREE.Scene();
+
+	let ambientLight = new THREE.AmbientLight( 0xcccccc, 0.5 );
+	scene.add( ambientLight );
+				
+	camera = new THREE.Camera();
+	scene.add(camera);
+
+	renderer = new THREE.WebGLRenderer({
+		antialias : true,
+		alpha: true
+	});
+	renderer.setClearColor(new THREE.Color('lightgrey'), 0)
+	renderer.setSize( 640, 480 );
+	renderer.domElement.style.position = 'absolute'
+	renderer.domElement.style.top = '0px'
+	renderer.domElement.style.left = '0px'
+	document.body.appendChild( renderer.domElement );
+
+	clock = new THREE.Clock();
+	deltaTime = 0;
+	totalTime = 0;
+	
+	////////////////////////////////////////////////////////////
+	// setup arToolkitSource
+	////////////////////////////////////////////////////////////
+
+	arToolkitSource = new THREEx.ArToolkitSource({
+		sourceType : 'webcam',
+	});
+
+	function onResize()
+	{
+		arToolkitSource.onResize()	
+		arToolkitSource.copySizeTo(renderer.domElement)	
+		if ( arToolkitContext.arController !== null )
+		{
+			arToolkitSource.copySizeTo(arToolkitContext.arController.canvas)	
+		}	
+	}
+
+	arToolkitSource.init(function onReady(){
+		onResize()
+	});
+	
+	// handle resize event
+	window.addEventListener('resize', function(){
+		onResize()
+	});
+	
+	////////////////////////////////////////////////////////////
+	// setup arToolkitContext
+	////////////////////////////////////////////////////////////	
+
+	// create atToolkitContext
+	arToolkitContext = new THREEx.ArToolkitContext({
+		cameraParametersUrl: 'data/camera_para.dat',
+		detectionMode: "mono_and_matrix",
+		matrixCodeType: "3x3",
+	});
+
+	/*
+	<a-scene embedded artoolkit='sourceType: webcam; detectionMode: mono_and_matrix; matrixCodeType: 3x3;'>
+</a-scene>*/
+	
+	// copy projection matrix to camera when initialization complete
+	arToolkitContext.init( function onCompleted(){
+		camera.projectionMatrix.copy( arToolkitContext.getProjectionMatrix() );
+	});
+
+	////////////////////////////////////////////////////////////
+	// setup markerRoots
+	////////////////////////////////////////////////////////////
+
+	// build markerControls
+	markerRoot1 = new THREE.Group();
+	scene.add(markerRoot1);
+	let markerControls1 = new THREEx.ArMarkerControls(arToolkitContext, markerRoot1, {
+		type: "barcode", barcodeValue: 5, 
+		smooth: true,
+  // number of matrices to smooth tracking over, more = smoother but slower follow
+  smoothCount: 5,
+  // distance tolerance for smoothing, if smoothThreshold # of matrices are under tolerance, tracking will stay still
+  smoothTolerance: 0.01,
+  // threshold for smoothing, will keep still unless enough matrices are over tolerance
+  smoothThreshold: 2
+	})
+
+	console.log(markerControls1)
+
+	
+	//markerRoot1.add( mesh1 );
+
+// Load atlas texture
+const atlasTexture = new THREE.TextureLoader().load('comp1.png'); // 4x4 texture grid
+const atlasSize = new THREE.Vector2(4, 4);
+
+// Plane geometry
+const geometry = new THREE.PlaneBufferGeometry(3, 3);
+
+// Shader material
+const material = new THREE.ShaderMaterial({
+  uniforms: {
+    atlas: { value: atlasTexture },
+    atlasSize: { value: atlasSize },
+    time: { value: 0 }
+  },
+  vertexShader: `
+    uniform float time;
+    attribute vec2 uvOffset;
+    attribute vec3 instanceOffset;
+    attribute float instanceSpeed;
+    uniform vec2 atlasSize;
+    varying vec2 vUv;
+
+    void main() {
+        vUv = uv / atlasSize + uvOffset;
+
+        // Animate y position with sine wave
+        vec3 pos = position + instanceOffset;
+       // pos.y += sin(time * instanceSpeed + instanceOffset.x + instanceOffset.z) * 1.0;
+
+        gl_Position = projectionMatrix * modelViewMatrix * instanceMatrix * vec4(pos, 1.0);
+    }
+  `,
+  fragmentShader: `
+    uniform sampler2D atlas;
+    varying vec2 vUv;
+    void main() {
+        gl_FragColor = texture2D(atlas, vUv);
+    }
+  `,
+  side: THREE.DoubleSide,
+   transparent: true,
+blending : THREE.AdditiveBlending,
+depthTest: false,
+});
+
+// Instanced mesh
+const count = 16;
+const instancedMesh = new THREE.InstancedMesh(geometry, material, count);
+const dummy = new THREE.Object3D();
+const uvOffsets = new Float32Array(count * 2);
+
+for (let i = 0; i < count; i++) {
+  // Position in a grid
+  dummy.position.set((i % 4) * 3 - 4.5, Math.floor(i / 4) * 3 - 4.5, 0);
+  dummy.updateMatrix();
+  instancedMesh.setMatrixAt(i, dummy.matrix);
+
+  // UV offset for atlas
+  const col = i % atlasSize.x;
+  const row = Math.floor(i / atlasSize.x);
+  uvOffsets[i*2] = col / atlasSize.x;
+  uvOffsets[i*2 + 1] = row / atlasSize.y;
+}
+
+const offsets = new Float32Array(count * 3); // x, y, z offsets
+const speeds = new Float32Array(count); // speed of animation
+
+for (let i = 0; i < count; i++) {
+    offsets[i*3] = Math.random()*2-1;//(i % 4) * 3 - 4.5;
+    offsets[i*3 + 1] = Math.random()*2-1;//Math.floor(i / 4) * 3 - 4.5;
+    offsets[i*3 + 2] = Math.random()*2-1;
+
+    speeds[i] = Math.random() * 2.0 + 0.5; // random speed
+}
+
+geometry.setAttribute('instanceOffset', new THREE.InstancedBufferAttribute(offsets, 3));
+geometry.setAttribute('instanceSpeed', new THREE.InstancedBufferAttribute(speeds, 1));
+geometry.setAttribute('uvOffset', new THREE.InstancedBufferAttribute(uvOffsets, 2));
+instancedMesh.rotation.x = - Math.PI/2;
+markerRoot1.add(instancedMesh);
+
+
+
+
+
+}
+
+
+function update()
+{
+	// update artoolkit on every frame
+	if ( arToolkitSource.ready !== false )
+		arToolkitContext.update( arToolkitSource.domElement );
+}
+
+
+function render()
+{
+	renderer.render( scene, camera );
+}
+
+
+function animate()
+{
+	requestAnimationFrame(animate);
+	deltaTime = clock.getDelta();
+	totalTime += deltaTime;
+	update();
+	render();
+}
+
+</script>
+
+</body>
+</html>
