@@ -134,7 +134,7 @@ const atlasTexture = new THREE.TextureLoader().load('comp1.png'); // 4x4 texture
 const atlasSize = new THREE.Vector2(4, 4);
 
 // Plane geometry
-const geometry = new THREE.PlaneBufferGeometry(3, 3);
+const geometry = new THREE.PlaneBufferGeometry(1, 1);
 
 // Shader material
 const material = new THREE.ShaderMaterial({
@@ -182,7 +182,8 @@ const uvOffsets = new Float32Array(count * 2);
 
 for (let i = 0; i < count; i++) {
   // Position in a grid
-  dummy.position.set((i % 4) * 3 - 4.5, Math.floor(i / 4) * 3 - 4.5, 0);
+  dummy.position.set(0,0, 0);
+  //dummy.position.set((i % 4) * 3 - 4.5, Math.floor(i / 4) * 3 - 4.5, 0);
   dummy.updateMatrix();
   instancedMesh.setMatrixAt(i, dummy.matrix);
 
@@ -197,9 +198,9 @@ const offsets = new Float32Array(count * 3); // x, y, z offsets
 const speeds = new Float32Array(count); // speed of animation
 
 for (let i = 0; i < count; i++) {
-    offsets[i*3] = Math.random()*2-1;//(i % 4) * 3 - 4.5;
-    offsets[i*3 + 1] = Math.random()*2-1;//Math.floor(i / 4) * 3 - 4.5;
-    offsets[i*3 + 2] = Math.random()*2-1;
+    offsets[i*3] = (Math.random()*2-1)  *2;  //(i % 4) * 3 - 4.5;
+    offsets[i*3 + 1] = ( Math.random()*2-1) *2;//Math.floor(i / 4) * 3 - 4.5;
+    offsets[i*3 + 2] =(Math.random()*2-1)*2;
 
     speeds[i] = Math.random() * 2.0 + 0.5; // random speed
 }
